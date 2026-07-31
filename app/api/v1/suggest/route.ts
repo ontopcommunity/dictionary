@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     if (limitParam) {
         const parsed = parseInt(limitParam, 10);
         if (!isNaN(parsed)) {
-            limit = Math.max(1, Math.min(20, parsed));
+            limit = Math.max(1, Math.min(100, parsed));
         }
     }
 
