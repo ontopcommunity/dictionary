@@ -15,7 +15,7 @@ function isVietnameseTwoChars(word: string) {
     // Normalize to NFC so precomposed Vietnamese characters are counted correctly
     const s = word.normalize('NFC').trim();
 
-    // Count code points (should be 2 for two visible characters like "áo", "ủa", etc.)
+    // Count code points (should be exactly 2 for two visible characters like "Hà", "Tĩnh", "áo", "ủa", etc.)
     if ([...s].length !== 2) return false;
 
     // Ensure characters are Latin-script letters (includes Vietnamese precomposed letters)
