@@ -26,11 +26,11 @@ export async function GET(req: Request) {
     }
 
     // Parse limit: default 5, min 1, max 20
-    let limit = 100000;
+    let limit = 10000;
     if (limitParam) {
         const parsed = parseInt(limitParam, 10);
         if (!isNaN(parsed)) {
-            limit = Math.max(100000, Math.min(100000, parsed));
+            limit = Math.max(10000, Math.min(10000, parsed));
         }
     }
 
