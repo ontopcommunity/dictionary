@@ -11,16 +11,19 @@ const CACHE_HEADERS = {
     'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-function isVietnameseTwoChars(word: string) {
+function isVietnameseTwoWordPhrase(word: string) {
     // Normalize to NFC so precomposed Vietnamese characters are counted correctly
     const s = word.normalize('NFC').trim();
 
-    // Count code points (should be exactly 2 for two visible characters like "Hà", "Tĩnh", "áo", "ủa", etc.)
-    if ([...s].length !== 2) return false;
+    // Split by space to get individual words
+    const parts = s.split(/\s+/).filter(p => p.length > 0);
 
-    // Ensure characters are Latin-script letters (includes Vietnamese precomposed letters)
+    // Should be exactly 2 words (like "Hà Tĩnh", "Quảng Ninh", "Ninh Bình")
+    if (parts.length !== 2) return false;
+
+    // Each part should be 1 or more Latin-script letters
     // Uses Unicode property escapes; requires Node/JS runtime that supports \p{Script=Latin}
-    return /^\p{Script=Latin}+$/u.test(s);
+    return parts.every(part => /^\p{Script=Latin}+$/u.test(part));
 }
 
 export async function GET(req: Request) {
@@ -49,9 +52,9 @@ export async function GET(req: Request) {
     // getSuggestions might be sync or async; handle both
     const allSuggestions = await Promise.resolve(getSuggestions(q, limit));
 
-    // Filter to only Vietnamese two-character words
+    // Filter to only Vietnamese two-word phrases (e.g., "Hà Tĩnh", "Quảng Ninh", "Ninh Bình")
     const suggestions = Array.isArray(allSuggestions)
-        ? allSuggestions.filter((s) => typeof s === 'string' && isVietnameseTwoChars(s))
+        ? allSuggestions.filter((s) => typeof s === 'string' && isVietnameseTwoWordPhrase(s))
         : [];
 
     return NextResponse.json({ suggestions }, { headers: CACHE_HEADERS });
