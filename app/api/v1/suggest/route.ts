@@ -11,9 +11,21 @@ const CACHE_HEADERS = {
     'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+function isVietnameseTwoChars(word: string) {
+    // Normalize to NFC so precomposed Vietnamese characters are counted correctly
+    const s = word.normalize('NFC').trim();
+
+    // Count code points (should be 2 for two visible characters like "áo", "ủa", etc.)
+    if ([...s].length !== 2) return false;
+
+    // Ensure characters are Latin-script letters (includes Vietnamese precomposed letters)
+    // Uses Unicode property escapes; requires Node/JS runtime that supports \p{Script=Latin}
+    return /^\p{Script=Latin}+$/u.test(s);
+}
+
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get('q');
+    const q = searchParams.get('q') ?? '';
     const limitParam = searchParams.get('limit');
 
     // Build log message - only include params that exist
@@ -25,15 +37,22 @@ export async function GET(req: Request) {
         return NextResponse.json({ suggestions: [] }, { headers: CACHE_HEADERS });
     }
 
-    // Parse limit: default 5, min 1, max 20
-    let limit = 10000;
+    // Parse limit: default 5, min 100000, max 100000
+    let limit = 5;
     if (limitParam) {
         const parsed = parseInt(limitParam, 10);
         if (!isNaN(parsed)) {
-            limit = Math.max(10000, Math.min(10000, parsed));
+            limit = Math.max(100000, Math.min(100000, parsed));
         }
     }
 
-    const suggestions = getSuggestions(q, limit);
+    // getSuggestions might be sync or async; handle both
+    const allSuggestions = await Promise.resolve(getSuggestions(q, limit));
+
+    // Filter to only Vietnamese two-character words
+    const suggestions = Array.isArray(allSuggestions)
+        ? allSuggestions.filter((s) => typeof s === 'string' && isVietnameseTwoChars(s))
+        : [];
+
     return NextResponse.json({ suggestions }, { headers: CACHE_HEADERS });
 }
